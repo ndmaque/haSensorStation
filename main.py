@@ -7,7 +7,9 @@ from umqttsimple import MQTTClient
 #import ubinascii
 import ujson
 #import stuff
-print('main.py V3 loaded')
+import ugit
+
+print('Main.py V3.1 loaded')
 topic_sub = 'ha/station/chat'
 topic_pub = 'ha/station/data'
 topic_err = 'ha/error'
@@ -26,9 +28,21 @@ daylight = ADC(Pin(32))
 pot = ADC(Pin(35))
 pot.atten(ADC.ATTN_11DB)
 
+def updateSourceCode():
+
+  files = ['boot.py', 'auth.py', 'main.py', 'ugit.py', 'umqttsimple.py']
+  for file in files:
+    path = 'https://raw.githubusercontent.com/ndmaque/haSensorStation/main/{}'.format(file)
+    ugit.pull(file, path)
+    
+    
 def sub_cb(topic, msg):
+  print('message', msg)
   if msg == b'PublishSensorData':
-    pubSensors('topicRequestData', 'subscribed PublishSensorData request')    
+    pubSensors('topicRequestData', 'subscribed PublishSensorData request')
+  if msg == b'UpdateSourceCode':
+    updateSourceCode()
+    machine.reset()
   
 def pubChat(msg):
   client.publish(topic_sub, msg)
@@ -70,7 +84,8 @@ try:
   client = connect_and_subscribe()
 except OSError as e:
   restart_and_reconnect()
-  
+
+pubChat('Station One Booted main.py')
 print('isconnected', station.isconnected())
 while True:
 
@@ -84,4 +99,3 @@ while True:
     
   except OSError as e:
       restart_and_reconnect()
-        
