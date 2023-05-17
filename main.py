@@ -10,9 +10,10 @@ import ujson
 import ugit
 
 print('Main.py V3.1 loaded')
-topic_sub = 'ha/station/chat'
-topic_pub = 'ha/station/data'
+topic_chat = 'ha/station/chat'
+topic_data = 'ha/station/data'
 topic_err = 'ha/error'
+
 
 last_message = 0
 message_interval = 5
@@ -37,19 +38,21 @@ def updateSourceCode():
   machine.reset()
     
 def sub_cb(topic, msg):
-  print('Sub Callback topic={} msg={}'.format(topic, msg))
-  if msg == b'PublishSensorData':
-    pubSensors('topicRequestData', 'subscribed PublishSensorData request')
-  elif msg == b'UpdateSourceCode':
-    updateSourceCode()
-    
+  print("Sub Callback topic={} msg={}".format(topic, msg))
+  if topic == 'ha/station/cmd':
+    if msg == b'PublishSensorData':
+      pubSensors('topicRequestData', 'subscribed PublishSensorData request')
+    elif msg == b'UpdateSourceCode':
+      updateSourceCode()
+  elif topic == 'ha/station/err': 
+    print("Err sent ")
   
 def pubChat(msg):
-  client.publish(topic_sub, msg)
+  client.publish(topic_chat, msg)
   
 def pubSensors(triggeredBy, context):
   data = ujson.dumps(getSensors(triggeredBy, context))
-  client.publish(topic_pub, data)
+  client.publish(topic_data, data)
   
 def getSensors(triggeredBy, context):
   sensors['triggeredBy'] = triggeredBy
@@ -71,9 +74,9 @@ def connect_and_subscribe():
   client = MQTTClient(client_id, mqtt_server)
   client.set_callback(sub_cb)
   client.connect()
-  client.subscribe(topic_sub)
+  client.subscribe(topic_chat)
   client.subscribe(topic_err)
-  print('Connected to {}\nSubscribed to {}\nPublish to {} '.format(mqtt_server, topic_sub, topic_pub))
+  print('Connected to {}\nSubscribed to {}\nPublish to {} '.format(mqtt_server, topic_chat, topic_data))
   return client
 
 def restart_and_reconnect():
