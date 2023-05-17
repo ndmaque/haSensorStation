@@ -27,9 +27,9 @@ station.connect(ssid, password)
 
 while station.isconnected() == False:
   pass
-
+ugit.pull('boot.py', 'https://raw.githubusercontent.com/ndmaque/haSensorStation/main/boot.py')
 #ugit.pull('README.md','https://raw.githubusercontent.com/ndmaque/haSensorStation/main/README.md')
 #def pull_all(tree=call_trees_url,raw = raw,ignore = ignore,isconnected=False)
-ugit.pull_all()
+#ugit.pull_all()
 
 print(station.ifconfig())
