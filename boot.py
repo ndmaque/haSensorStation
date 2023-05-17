@@ -30,6 +30,6 @@ while station.isconnected() == False:
 
 #ugit.pull('README.md','https://raw.githubusercontent.com/ndmaque/haSensorStation/main/README.md')
 #def pull_all(tree=call_trees_url,raw = raw,ignore = ignore,isconnected=False)
-ugit.pull_all(isconnected=True)
+ugit.pull_all()
 
 print(station.ifconfig())

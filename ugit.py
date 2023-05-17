@@ -19,8 +19,8 @@ global internal_tree
 #### -------------User Variables----------------####
 #### 
 # Default Network to connect using wificonnect()
-ssid = ""
-password = ""
+ssid = 'TP-Link_9162'
+password = '65919675'
 
 # CHANGE TO YOUR REPOSITORY INFO
 # Repository must be public if no personal access token is supplied
