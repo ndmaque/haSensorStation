@@ -38,7 +38,7 @@ def updateSourceCode():
   machine.reset()
     
 def sub_cb(topic, msg):
-  print("Sub Callback topic={} msg={}".format(topic, msg))
+  print("Sub Callback topic={} msg={}".format(str(topic), str(msg)))
   if topic == 'ha/station/cmd':
     if msg == b'PublishSensorData':
       pubSensors('topicRequestData', 'subscribed PublishSensorData request')
