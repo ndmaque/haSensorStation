@@ -12,6 +12,7 @@ import ugit
 print('Main.py V3.1 loaded')
 topic_chat = 'ha/station/chat'
 topic_data = 'ha/station/data'
+topic_cmd = 'ha/station/cmd'
 topic_err = 'ha/error'
 
 
@@ -38,13 +39,15 @@ def updateSourceCode():
   machine.reset()
     
 def sub_cb(topic, msg):
-  print("Sub Callback topic={} msg={}".format(str(topic), str(msg)))
-  if topic == 'ha/station/cmd':
+  topic = str(topic)
+  msg = str(msg)
+  print("Sub Callback topic: {} msg: {}".format(topic, msg))
+  if topic == topic_cmd:
     if msg == b'PublishSensorData':
       pubSensors('topicRequestData', 'subscribed PublishSensorData request')
     elif msg == b'UpdateSourceCode':
       updateSourceCode()
-  elif topic == 'ha/station/err': 
+  elif topic == topic_err: 
     print("Err sent ")
   
 def pubChat(msg):
