@@ -1,7 +1,7 @@
 print('Boot.py loaded')
 
 import time
-from umqttsimple import MQTTClient
+#from umqttsimple import MQTTClient
 import ubinascii
 import machine
 import micropython

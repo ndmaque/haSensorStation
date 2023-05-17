@@ -3,6 +3,7 @@ import machine
 import esp32
 import sys,time
 # not nneded see boot.py from umqttsimple import MQTTClient
+from umqttsimple import MQTTClient
 #import ubinascii
 import ujson
 #import stuff
