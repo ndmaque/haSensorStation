@@ -29,21 +29,18 @@ pot = ADC(Pin(35))
 pot.atten(ADC.ATTN_11DB)
 
 def updateSourceCode():
-  print("running updateSourceCode")
   pubChat("running updateSourceCode")
   files = ['boot.py', 'auth.py', 'main.py', 'ugit.py', 'umqttsimple.py']
   for file in files:
     path = 'https://raw.githubusercontent.com/ndmaque/haSensorStation/main/{}'.format(file)
     ugit.pull(file, path)
-    
-  pubChat("finished updateSourceCode")
   machine.reset()
     
 def sub_cb(topic, msg):
-  print('message', msg)
+  print('Sub Callback topic={} msg={}'.format(topic, msg))
   if msg == b'PublishSensorData':
     pubSensors('topicRequestData', 'subscribed PublishSensorData request')
-  if msg == b'UpdateSourceCode':
+  elif msg == b'UpdateSourceCode':
     updateSourceCode()
     
   
@@ -75,6 +72,7 @@ def connect_and_subscribe():
   client.set_callback(sub_cb)
   client.connect()
   client.subscribe(topic_sub)
+  client.subscribe(topic_err)
   print('Connected to {}\nSubscribed to {}\nPublish to {} '.format(mqtt_server, topic_sub, topic_pub))
   return client
 
