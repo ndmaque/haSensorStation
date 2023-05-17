@@ -7,7 +7,7 @@ from umqttsimple import MQTTClient
 #import ubinascii
 import ujson
 #import stuff
-
+print('main.py V3 loaded')
 topic_sub = 'ha/station/chat'
 topic_pub = 'ha/station/data'
 topic_err = 'ha/error'

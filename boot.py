@@ -1,4 +1,4 @@
-print('Boot.py loaded')
+print('Boot.py V3 loaded')
 
 import time
 #from umqttsimple import MQTTClient
