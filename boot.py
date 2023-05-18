@@ -7,7 +7,7 @@ import machine
 import micropython
 import network
 import esp
-esp.osdebug(None)
+#esp.osdebug(None)
 import gc
 gc.collect()
 
@@ -25,4 +25,6 @@ while station.isconnected() == False:
   pass
 
 
-print(station.ifconfig())
+print('config',station.ifconfig())
+print('Staion: ',station)
+

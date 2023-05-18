@@ -10,10 +10,10 @@ import ujson
 import ugit
 
 print('Main.py V3.1 loaded')
-topic_chat = b'ha/station/chat'
-topic_data = b'ha/station/data'
-topic_cmd = b'ha/station/cmd'
-topic_err = b'ha/error'
+topic_chat = 'ha/station/chat'
+topic_data = 'ha/station/data'
+topic_cmd = 'ha/station/cmd'
+topic_err = 'ha/error'
 
 
 last_message = 0
@@ -39,12 +39,14 @@ def updateSourceCode():
   machine.reset()
     
 def sub_cb(topic, msg):
-
-  print("Sub Callback topic: {} msg: {}".format(topic, msg))
+  topic = str(topic, 'utf-8')
+  msg = str(msg, 'utf-8')
+  
+  print("Sub Callback topic:{} {} msg: {} time: {}".format(type(topic), topic, type(msg), time.time()))
   if topic == topic_cmd:
-    if msg == b'PublishSensorData':
+    if msg == 'PublishSensorData':
       pubSensors('topicRequestData', 'subscribed PublishSensorData request')
-    elif msg == b'UpdateSourceCode':
+    elif msg == 'UpdateSourceCode':
       updateSourceCode()
   elif topic == topic_err: 
     print("Err sent ")
@@ -105,3 +107,4 @@ while True:
     
   except OSError as e:
       restart_and_reconnect()
+
