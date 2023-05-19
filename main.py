@@ -17,13 +17,13 @@ mqttClient.subscribe('ha/station/#')
 motion = Pin(34, Pin.IN)
 
 while True:
-
+  motionVal = motion.value()
   try:
     mqttClient.check_msg()
-    if motion.value():
+    if motionVal ==1:
       print('MotionTrue =', motion.value())
       tool.pubChat(mqttClient,'Station One Motion Detected')
-      #tool.pubSensors('motionDetected', 'test msg')
+      tool.pubSensors('motionDetected', 'test msg')
       time.sleep(15)
     else:
       print('MotionFalse=', motion.value())
