@@ -1,7 +1,11 @@
-wifiSsid = 'TP-Link_9162'
-wifiPass = '65919675'
-# mqqt = {} # TODO
+import ubinascii
+import machine
 
-wifi = {'ssid': wifiSsid, 'pass': wifiPass}
+class AuthInfo:
+  def __init__(self):
+    self.wifi = {'ssid': 'VM6183911', 'pass':'ST*ting2436'}
+    self.mqtt = {'ip':'192.168.0.20', 'pass': ''}
+    self.client_id = ubinascii.hexlify(machine.unique_id())
 
-print(wifi['pass'])
+  def test(self):
+    return 'client_id: {}'.format(self.client_id)
