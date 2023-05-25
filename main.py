@@ -1,36 +1,52 @@
-
-from machine import Pin, PWM, ADC, TouchPad
+import time, math, ujson
+import ubinascii
 import machine
-import sys,time
-
-#import conman as con
-import tools as tool
-
-print('Main.py 3.2 Delay: 5 Sec to crash!')
-time.sleep(5)
-print("continue...")
-
-tool.pubChat(mqttClient,"Main.py test msg")
-mqttClient.set_callback(tool.sub_cb)
-mqttClient.subscribe('ha/station/#')
-
-motion = Pin(34, Pin.IN)
-
-while True:
-  motionVal = motion.value()
-  try:
-    mqttClient.check_msg()
-    if motionVal ==1:
-      print('MotionTrue =', motion.value())
-      tool.pubChat(mqttClient,'Station One Motion Detected')
-      tool.pubSensors('motionDetected', 'test msg')
-      time.sleep(15)
-    else:
-      print('MotionFalse=', motion.value())
-      time.sleep(3)
-    time.sleep(0.5)
-    
-  except OSError as e:
-      print("Error: main.py: {}".format(e))
+from machine import Pin, PWM, ADC
+import micropython
 
 
+# Vars from boot: wlan, mqtt, auth, tool
+print("Main.py v4 t={}".format(time.time()))
+
+# TODO add a 5v power line to break Thonny bug
+killPower = Pin(22, Pin.OUT, Pin.PULL_UP)
+killPower.value(1)
+##################
+
+tools.pulsePin(tools.motionLed, 50)
+
+motionAlert = 0
+lastMotion = 0
+
+
+def motionCb(pin):
+  global motionAlert, lastMotion, mqqt, tools, daylightPin
+  if tools.motionPin.value() == 1 and (time.time()-lastMotion) > 15:
+    motionAlert = True
+    lastMotion = time.time()
+    mqtt.publish('ha/station/hall_light', ujson.dumps({'on': 1, 'daylight': tools.daylightPin.read(), 'delay':1000}))
+        
+tools.motionPin.irq(trigger=Pin.IRQ_RISING, handler=motionCb)
+
+mqtt.set_callback(tools.mqqtSubCB)
+mqtt.subscribe('ha/station/#')
+mqtt.check_msg()
+last_msg_check = time.time()
+
+print(tools.getSytemStatus(wlan))
+
+# main loop till kilswitch pulled for thonny can't stop
+while tools.thonnyKillPin.value():
+  if time.time() - last_msg_check > 5:
+    last_msg_check = time.time()
+    mqtt.check_msg()
+  if motionAlert == 1:
+    motionAlert = 0
+    tools.pulsePin(tools.motionLed, 20)
+  else:
+    tools.motionLed.duty(0)
+  time.sleep(0.1)
+
+# end   
+print("EndLoop: thonnyKillPin: {}".format(tools.thonnyKillPin.value()))
+print("logs: {}".format(tools.getLog()))

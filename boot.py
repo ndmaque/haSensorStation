@@ -1,37 +1,35 @@
-print('Boot.py V3.2 loading...')
-
-import time
-import ubinascii
 import machine
-import micropython
 import network
-import esp
+import time
 import gc
-import conman as con
+import ujson
 
-esp.osdebug(None)
+from umqttsimple import MQTTClient
+from auth import AuthInfo as Auth
+from tools import Tools
+
 gc.collect()
+auth = Auth()
+tools = Tools()
 
-ssid = 'TP-Link_9162'
-password = '65919675'
-mqtt_server = '192.168.1.20'
-client_id = ubinascii.hexlify(machine.unique_id())
+tools.log(0, "Boot.py v4")
 
+wlan = network.WLAN(network.STA_IF)
+wlan.active(True)
 try:
-  station = network.WLAN(network.STA_IF)
-  station.active(True)
-  station.connect(ssid, password)
-  while station.isconnected() == False:
+  wlan.connect(auth.wifi['ssid'], auth.wifi['pass'])
+  while wlan.isconnected() == False:
     pass
-  print('Network OK: {}'.format(station.ifconfig()))
+  tools.log(0, "RSSI | {}".format(wlan.status('rssi')))
+  tools.log(0, "IP | {}".format(wlan.ifconfig()[0]))
 except OSError as e:
-  print("Error: Wifi Boot.py: {}".format(e))
-  time.sleep(5)
-  machine.reset()
+  tools.log(2, 'wlan.connect | {}'.format(e))
 
+mqtt = MQTTClient(auth.client_id, auth.mqtt['ip'])
 try:
-  mqttClient = con.connect_mqtt(client_id, mqtt_server)
+  mqtt.connect()
 except OSError as e:
-  print("Error: Mqtt connection failed: {}".format(e))
-  time.sleep(5)
-  machine.reset()
+  tools.log(2, 'mqtt.connect | {}'.format(e))
+
+
+mqtt.publish('ha/station/bootLog', ujson.dumps(tools.getLog()))

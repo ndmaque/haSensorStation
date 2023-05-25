@@ -1,37 +1,92 @@
-print('Boot.py V3.2 loading...')
-
-import time
+from machine import Pin, PWM, ADC, TouchPad
+import math, time
 import ubinascii
 import machine
-import micropython
-import network
-import esp
-import gc
-import conman as con
+import esp32
+import ujson
+import ugit
+from auth import AuthInfo as Auth
 
-esp.osdebug(None)
-gc.collect()
+class Tools:
 
-ssid = 'TP-Link_9162'
-password = '65919675'
-mqtt_server = '192.168.1.20'
-client_id = ubinascii.hexlify(machine.unique_id())
+  #auth = Auth()
+   
+  def __init__(self):
+    self.client_id = ubinascii.hexlify(machine.unique_id())
+    self.touchPad = TouchPad(Pin(33))
+    self.motionPin = Pin(39, Pin.IN, Pin.PULL_DOWN)
+    self.daylightPin = ADC(Pin(32))
+    self.thonnyKillPin = Pin(36, Pin.IN)
+    self.motionLed = PWM(Pin(2), freq=1000)
+    self.logs = []
+    self.subPath = 'ha/station/'
+    
+    
+  def log(self, level = 0, msg = ''):
+    levels = ['Info','Warn','Fatal']
+    self.logs.append("{}: | {} | {}".format(levels[level], msg, time.time()))
 
-try:
-  station = network.WLAN(network.STA_IF)
-  station.active(True)
-  station.connect(ssid, password)
-  while station.isconnected() == False:
-    pass
-  print('Network OK: {}'.format(station.ifconfig()))
-except OSError as e:
-  print("Error: Wifi Boot.py: {}".format(e))
-  time.sleep(5)
-  machine.reset()
+  def getLog(self):
+    return self.logs
+      
+  def test(self):
+    return 'client_id: {}'.format(self.client_id)
+   
+  def mqqtSubCB(self, topic, msg):
+    topic = topic.decode()
+    msg = msg.decode()
+    path = self.subPath
 
-try:
-  mqttClient = con.connect_mqtt(client_id, mqtt_server)
-except OSError as e:
-  print("Error: Mqtt connection failed: {}".format(e))
-  time.sleep(5)
-  machine.reset()
+    print("Sub Callback topic:{} msg: {} time: {}".format(topic, msg, time.time()))
+    if topic == path + 'cmd/PublishSensorData':
+      self.pubSensors('topicRequestData', 'subscribed PublishSensorData request')
+    elif topic == path + 'cmd/UpdateSourceCode':
+        self.updateSourceCode(msg)
+    elif topic == path + 'cmd/RebootMachine':
+        self.machine.reset()
+    elif topic == path + 'error': 
+      print("Err...")
+    
+  def pubSensors(self,mqtt, triggeredBy='', context=''):
+    data = ujson.dumps(self.getSensors(triggeredBy, context))
+    mqtt.publish(self.subPath +'sensor', data)
+
+  def getSensors(self, triggeredBy ='', context = ''):
+    sensors = {}
+    pot = ADC(Pin(35))
+    pot.atten(ADC.ATTN_11DB)
+    
+    sensors['triggeredBy'] = triggeredBy
+    sensors['context'] = context
+    sensors['name'] = 'Hall_1'
+    sensors['client_id'] = self.client_id
+    sensors['time'] = time.time()
+    sensors['cpuTemp'] = (esp32.raw_temperature()-32.0)/1.8
+    sensors['temp'] = 0
+    sensors['touchpad_1'] = self.touchPad.read()
+    sensors['humidity'] = 0
+    sensors['pot'] = pot.read()
+    sensors['daylight'] = self.daylightPin.read()
+    sensors['motion'] = self.motionPin.value()
+    return sensors
+      
+  def updateSourceCode(self, filesCsv):
+    defaultFiles = 'boot.py,auth.py,main.py,ugit.py,umqttsimple.py,tools.py'
+
+    try:
+      files = filesCsv.split(',')
+    except OSError as e:
+      files = defaultFiles.split(',')
+      self.log(2, 'updateSourceCode using defaultFiles')
+        
+    for file in files:
+      path = 'https://raw.githubusercontent.com/ndmaque/haSensorStation/main/{}'.format(file)
+      ugit.pull(file, path)
+    machine.reset()
+ 
+  def pulsePin(self, pin, speed):
+    for i in range(20):
+      pin.duty(int(math.sin(i / 10 * math.pi) * 500 + 500))
+      time.sleep_ms(speed)
+    pin.duty(0)
+
