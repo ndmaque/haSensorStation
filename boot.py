@@ -10,9 +10,11 @@ from tools import Tools
 
 gc.collect()
 auth = Auth()
-tools = Tools()
+tools = Tools('','')
 
 tools.log(0, "Boot.py v4")
+tools.pulsePin(tools.motionLed, 50)
+time.sleep(1)
 
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
@@ -31,5 +33,10 @@ try:
 except OSError as e:
   tools.log(2, 'mqtt.connect | {}'.format(e))
 
+tools.pulsePin(tools.motionLed, 100)
+time.sleep(1)
+
+# reload tools with clients
+tools = Tools(wlan,mqtt)
 
 mqtt.publish('ha/station/bootLog', ujson.dumps(tools.getLog()))

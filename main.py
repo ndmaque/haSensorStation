@@ -4,14 +4,10 @@ import machine
 from machine import Pin, PWM, ADC
 import micropython
 
+# NB: Inherited Vars from boot.py: wlan, mqtt, auth, tool
 
-# Vars from boot: wlan, mqtt, auth, tool
+
 print("Main.py v4 t={}".format(time.time()))
-
-# TODO add a 5v power line to break Thonny bug
-killPower = Pin(22, Pin.OUT, Pin.PULL_UP)
-killPower.value(1)
-##################
 
 tools.pulsePin(tools.motionLed, 50)
 
@@ -24,7 +20,10 @@ def motionCb(pin):
   if tools.motionPin.value() == 1 and (time.time()-lastMotion) > 15:
     motionAlert = True
     lastMotion = time.time()
-    mqtt.publish('ha/station/hall_light', ujson.dumps({'on': 1, 'daylight': tools.daylightPin.read(), 'delay':1000}))
+    print("Motion Alert")
+    #payload = {'motion': 1, 'daylight': tools.daylightPin.read()}
+    tools.pubSensors('hall/motion', 'motionAlert')
+    #mqtt.publish('ha/station/hall/motion', ujson.dumps(payload))
         
 tools.motionPin.irq(trigger=Pin.IRQ_RISING, handler=motionCb)
 
@@ -33,7 +32,7 @@ mqtt.subscribe('ha/station/#')
 mqtt.check_msg()
 last_msg_check = time.time()
 
-print(tools.getSytemStatus(wlan))
+print(tools.getSytemStatus())
 
 # main loop till kilswitch pulled for thonny can't stop
 while tools.thonnyKillPin.value():

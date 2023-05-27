@@ -1,25 +1,32 @@
-from machine import Pin, PWM, ADC, TouchPad
+from machine import Pin, PWM, ADC, TouchPad, SoftI2C
 import math, time
 import ubinascii
 import machine
 import esp32
 import ujson
+import ahtx0
 import ugit
 from auth import AuthInfo as Auth
+
+i2c = SoftI2C(scl=Pin(22), sda=Pin(21))
 
 class Tools:
 
   #auth = Auth()
    
-  def __init__(self):
+  def __init__(self, wlan, mqtt):
+    self.wlan = wlan
+    self.mqtt = mqtt
     self.client_id = ubinascii.hexlify(machine.unique_id())
     self.touchPad = TouchPad(Pin(33))
     self.motionPin = Pin(39, Pin.IN, Pin.PULL_DOWN)
     self.daylightPin = ADC(Pin(32))
     self.thonnyKillPin = Pin(36, Pin.IN)
     self.motionLed = PWM(Pin(2), freq=1000)
+    self.aht = ahtx0.AHT10(i2c)
     self.logs = []
     self.subPath = 'ha/station/'
+    self.pubPath = 'ha/station/'
     
     
   def log(self, level = 0, msg = ''):
@@ -39,7 +46,7 @@ class Tools:
 
     print("Sub Callback topic:{} msg: {} time: {}".format(topic, msg, time.time()))
     if topic == path + 'cmd/PublishSensorData':
-      self.pubSensors('topicRequestData', 'subscribed PublishSensorData request')
+      self.pubSensors('hall/motion', 'PublishSensorData')
     elif topic == path + 'cmd/UpdateSourceCode':
         self.updateSourceCode(msg)
     elif topic == path + 'cmd/RebootMachine':
@@ -47,25 +54,25 @@ class Tools:
     elif topic == path + 'error': 
       print("Err...")
     
-  def pubSensors(self,mqtt, triggeredBy='', context=''):
-    data = ujson.dumps(self.getSensors(triggeredBy, context))
-    mqtt.publish(self.subPath +'sensor', data)
+  def pubSensors(self, path, triggeredBy=''):
 
-  def getSensors(self, triggeredBy ='', context = ''):
-    sensors = {}
-    pot = ADC(Pin(35))
-    pot.atten(ADC.ATTN_11DB)
+    data = ujson.dumps(self.getSensors(triggeredBy))
+    self.mqtt.publish(self.pubPath + path, data)
+
+  def getSensors(self, triggeredBy=''):
+    #pot = ADC(Pin(35))
+    #pot.atten(ADC.ATTN_11DB)
     
+    sensors = {}
     sensors['triggeredBy'] = triggeredBy
-    sensors['context'] = context
     sensors['name'] = 'Hall_1'
     sensors['client_id'] = self.client_id
     sensors['time'] = time.time()
     sensors['cpuTemp'] = (esp32.raw_temperature()-32.0)/1.8
-    sensors['temp'] = 0
     sensors['touchpad_1'] = self.touchPad.read()
-    sensors['humidity'] = 0
-    sensors['pot'] = pot.read()
+    #sensors['pot'] = pot.read()
+    sensors['temperature']  = float("{:.2f}".format(self.aht.temperature))
+    sensors['humidity'] = float("{:0.2f}".format(self.aht.relative_humidity))
     sensors['daylight'] = self.daylightPin.read()
     sensors['motion'] = self.motionPin.value()
     return sensors
@@ -89,4 +96,12 @@ class Tools:
       pin.duty(int(math.sin(i / 10 * math.pi) * 500 + 500))
       time.sleep_ms(speed)
     pin.duty(0)
+    
+  def getSytemStatus(self):
+    data = {}
+    data['rssi']= self.wlan.status('rssi')
+    data['ip'] = self.wlan.ifconfig()[0]
+    
+    return data
+
 
